@@ -83,6 +83,28 @@ export class GameScene extends Phaser.Scene {
             .create(x + TILE_SIZE / 2, y - TILE_SIZE / 2, "tiles-sheet", FLAG_FRAMES[1])
             .setDepth(DEPTHS.decor);
           break;
+        case "hint": {
+          const props = Object.fromEntries(
+            (obj.properties ?? []).map(
+              (p: { name: string; value: unknown }) => [p.name, p.value],
+            ),
+          );
+          this.add
+            .image(x, y + TILE_SIZE, "tiles-sheet", 84)
+            .setDepth(DEPTHS.decor);
+          this.add
+            .text(x, y - 6, String(props.text ?? ""), {
+              fontFamily: "monospace",
+              fontSize: "9px",
+              color: "#ffffff",
+              stroke: "#1a1c2c",
+              strokeThickness: 3,
+              align: "center",
+            })
+            .setOrigin(0.5, 1)
+            .setDepth(DEPTHS.decor);
+          break;
+        }
         case "platform": {
           const props = Object.fromEntries(
             (obj.properties ?? []).map(
@@ -138,6 +160,11 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.setDeadzone(60, 40);
 
     this.scene.launch("ui");
+
+    this.input.keyboard!.on("keydown-R", () => this.killPlayer());
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.input.keyboard?.off("keydown-R");
+    });
   }
 
   update(time: number): void {

@@ -15,6 +15,7 @@ export class MenuScene extends Phaser.Scene {
       lines: [
         "ARROWS / WASD to move, SPACE to jump",
         "Stomp enemies, grab coins, reach the flag",
+        "Press R if you ever get stuck",
       ],
       onConfirm: () => {
         gameState.reset(this.registry);

@@ -32,12 +32,55 @@ function mulberry32(seed) {
   };
 }
 
-function buildLevel(name, rows, seed) {
+function validateLevel(name, grid, width, height) {
+  const solid = (x, y) =>
+    x >= 0 && x < width && y >= 0 && y < height && grid[y][x] === "#";
+  const problems = [];
+
+  // Column ground heights: walking left/right must never require a climb of
+  // more than 2 tiles (max jump rise), unless the column is a pit (no ground).
+  const groundRow = (x) => {
+    for (let y = 0; y < height; y++) if (solid(x, y)) return y;
+    return null;
+  };
+  for (let x = 1; x < width; x++) {
+    const a = groundRow(x - 1);
+    const b = groundRow(x);
+    if (a !== null && b !== null && Math.abs(a - b) > 2 && a - b > 2) {
+      // climbing right into a wall taller than 2 — allowed only if it is a
+      // deliberate wall (player approaches from elsewhere); flag walls > 4.
+      if (a - b > 4) problems.push(`unclimbable wall at column ${x} (rise ${a - b})`);
+    }
+  }
+
+  // Pits/pockets must be escapable: an empty cell below the terrain surface is
+  // sealed if solid on both sides and above.
+  for (let x = 0; x < width; x++) {
+    let seenSolid = false;
+    for (let y = height - 1; y >= 0; y--) {
+      if (solid(x, y)) seenSolid = true;
+      else if (seenSolid) {
+        if (solid(x - 1, y) && solid(x + 1, y) && solid(x, y - 1)) {
+          problems.push(`sealed pocket at (${x},${y})`);
+        }
+      }
+    }
+  }
+
+  if (problems.length) {
+    throw new Error(`${name} failed validation:\n  ${problems.join("\n  ")}`);
+  }
+}
+
+function buildLevel(name, level, seed) {
+  const { rows, hints } = level;
   const height = rows.length;
   const width = Math.max(...rows.map((r) => r.length));
   const grid = rows.map((r) => r.padEnd(width, ".").split(""));
   const solid = (x, y) =>
     x >= 0 && x < width && y >= 0 && y < height && grid[y][x] === "#";
+
+  validateLevel(name, grid, width, height);
 
   const rand = mulberry32(seed);
   const terrain = [];
@@ -112,6 +155,10 @@ function buildLevel(name, rows, seed) {
         }
       }
     }
+  }
+
+  for (const hint of hints) {
+    addObject("hint", hint.x, hint.y, { text: hint.text });
   }
 
   const tileLayer = (layerName, data, id) => ({
