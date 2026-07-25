@@ -1,18 +1,23 @@
 import Phaser from "phaser";
 
 import { DEPTHS, PLAYER } from "../config/constants";
+import type { InputController } from "../input/InputController";
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
   declare body: Phaser.Physics.Arcade.Body;
 
-  private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
-  private wasd: Record<"up" | "left" | "right", Phaser.Input.Keyboard.Key>;
+  private controls: InputController;
   private lastGroundedAt = 0;
   private jumpRequestedAt = -Infinity;
   private invulnerableUntil = 0;
   private controlEnabled = true;
 
-  constructor(scene: Phaser.Scene, x: number, y: number) {
+  constructor(
+    scene: Phaser.Scene,
+    x: number,
+    y: number,
+    input: InputController,
+  ) {
     super(scene, x, y, "characters", 0);
 
     scene.add.existing(this);
@@ -24,13 +29,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setDragX(PLAYER.drag);
     this.setCollideWorldBounds(true);
 
-    const keyboard = scene.input.keyboard!;
-    this.cursors = keyboard.createCursorKeys();
-    this.wasd = {
-      up: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W),
-      left: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A),
-      right: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
-    };
+    this.controls = input;
   }
 
   get isInvulnerable(): boolean {
@@ -40,14 +39,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   update(time: number): void {
     if (!this.controlEnabled) return;
 
-    const left = this.cursors.left.isDown || this.wasd.left.isDown;
-    const right = this.cursors.right.isDown || this.wasd.right.isDown;
-    const jumpPressed =
-      Phaser.Input.Keyboard.JustDown(this.cursors.up) ||
-      Phaser.Input.Keyboard.JustDown(this.cursors.space) ||
-      Phaser.Input.Keyboard.JustDown(this.wasd.up);
-    const jumpHeld =
-      this.cursors.up.isDown || this.cursors.space.isDown || this.wasd.up.isDown;
+    const { left, right, jumpHeld, jumpJustPressed } = this.controls.read();
 
     if (left && !right) {
       this.setAccelerationX(-PLAYER.acceleration);
@@ -63,7 +55,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     const grounded = this.body.blocked.down;
     if (grounded) this.lastGroundedAt = time;
-    if (jumpPressed) this.jumpRequestedAt = time;
+    if (jumpJustPressed) this.jumpRequestedAt = time;
 
     const canCoyoteJump = time - this.lastGroundedAt < PLAYER.coyoteTimeMs;
     const jumpBuffered = time - this.jumpRequestedAt < PLAYER.jumpBufferMs;

@@ -12,6 +12,8 @@ import { gameState } from "../config/gameState";
 import { Bat, Enemy, Slime } from "../entities/enemies";
 import { MovingPlatform } from "../entities/MovingPlatform";
 import { Player } from "../entities/Player";
+import { InputController } from "../input/InputController";
+import { hasTouchScreen, VirtualControls } from "../input/VirtualControls";
 
 const SPIKE_FRAME = 68;
 const FLAG_FRAMES = [111, 112];
@@ -124,7 +126,11 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
-    this.player = new Player(this, spawn.x, spawn.y);
+    const inputController = new InputController(this);
+    this.player = new Player(this, spawn.x, spawn.y, inputController);
+    if (hasTouchScreen()) {
+      new VirtualControls(this, inputController);
+    }
 
     this.physics.add.collider(this.player, this.terrainLayer);
     this.physics.add.collider(this.enemies, this.terrainLayer);

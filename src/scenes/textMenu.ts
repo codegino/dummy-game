@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 
 import { GAME_HEIGHT, GAME_WIDTH } from "../config/constants";
+import { hasTouchScreen } from "../input/VirtualControls";
 
 interface TextMenuOptions {
   title: string;
@@ -40,8 +41,13 @@ export function buildTextMenu(
       .setOrigin(0.5);
   });
 
+  const defaultPrompt = "PRESS SPACE TO START";
+  const promptText = (options.prompt ?? defaultPrompt).replace(
+    /PRESS SPACE/,
+    hasTouchScreen() ? "TAP" : "PRESS SPACE",
+  );
   const prompt = scene.add
-    .text(cx, GAME_HEIGHT * 0.75, options.prompt ?? "PRESS SPACE TO START", {
+    .text(cx, GAME_HEIGHT * 0.75, promptText, {
       fontFamily: "monospace",
       fontSize: "16px",
       color: "#ffd541",
