@@ -40,6 +40,7 @@ export class GameScene extends Phaser.Scene {
     map.createLayer("decor", tileset)!.setDepth(DEPTHS.decor);
 
     this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
+    this.physics.world.setBoundsCollision(true, true, true, false);
     this.enemies = this.physics.add.group({ runChildUpdate: false });
 
     const coins = this.physics.add.group({ allowGravity: false });
